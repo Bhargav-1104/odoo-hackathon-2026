@@ -2,11 +2,12 @@
 
 ## Team Members
 - Bhargav Sharma
-- Member 2
-- Member 3
+- Ankit Raj
+- Yash Rote
 
 ## Problem Statement
-(To be updated after selection)
+Traveloop
+
 
 ## Tech Stack
 - Frontend: React
