@@ -1,8 +1,8 @@
 export function RecentActivityList({ items }) {
   if (!items.length) {
     return (
-      <div className="dash-empty" style={{ padding: "1.5rem 1rem" }}>
-        <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--auth-text-muted)" }}>
+      <div className="dash-empty dash-empty--activity" role="status">
+        <p className="dash-empty__muted">
           No recent activity yet. Creating or updating trips will show up here.
         </p>
       </div>

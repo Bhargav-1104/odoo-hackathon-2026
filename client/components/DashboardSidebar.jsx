@@ -35,16 +35,28 @@ function IconSettings() {
   );
 }
 
-export function DashboardSidebar({ onNavigate }) {
+export function DashboardSidebar({ onNavigate, onDismiss }) {
   return (
-    <>
-      <div className="dash-sidebar__brand">
-        <span className="dash-sidebar__mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M12 3v18M5 12h14M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
+    <div className="dash-sidebar__inner">
+      <div className="dash-sidebar__top">
+        <div className="dash-sidebar__brand">
+          <span className="dash-sidebar__mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M12 3v18M5 12h14M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
+            </svg>
+          </span>
+          Traveloop
+        </div>
+        <button
+          type="button"
+          className="dash-sidebar__close"
+          aria-label="Close menu"
+          onClick={() => onDismiss?.()}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
           </svg>
-        </span>
-        Traveloop
+        </button>
       </div>
 
       <nav className="dash-sidebar__nav" aria-label="Primary">
@@ -83,9 +95,7 @@ export function DashboardSidebar({ onNavigate }) {
           Explore
         </button>
 
-        <div className="dash-nav__label" style={{ marginTop: "0.75rem" }}>
-          Workspace
-        </div>
+        <div className="dash-nav__label dash-nav__label--spaced">Workspace</div>
         <button
           type="button"
           className="dash-nav__link"
@@ -100,6 +110,6 @@ export function DashboardSidebar({ onNavigate }) {
       </nav>
 
       <div className="dash-sidebar__footer">Stay organized · Travel lighter</div>
-    </>
+    </div>
   );
 }

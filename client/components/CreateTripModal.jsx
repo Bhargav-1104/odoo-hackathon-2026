@@ -32,6 +32,15 @@ export function CreateTripModal({ open, onClose, onCreated }) {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   function update(field) {
