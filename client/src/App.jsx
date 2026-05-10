@@ -1,5 +1,7 @@
+import AuthPage from "../pages/AuthPage.jsx";
+
 function App() {
-  return <div>Traveloop</div>;
+  return <AuthPage />;
 }
 
 export default App;
