@@ -2,7 +2,7 @@
 
 ## Team Members
 - Bhargav Sharma
-- Ankit Raj
+- ANKIT RAJ
 - Yash Rote
 
 ## Problem Statement
