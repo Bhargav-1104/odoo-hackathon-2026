@@ -102,14 +102,12 @@ export default function DashboardPage() {
           timeLabel: "Synced with backend",
         })),
       );
-    } catch {
+    }  catch {
       setTripsError("Unable to reach the server. Check that it is running and try again.");
       setTrips([]);
     } finally {
-      finally {
-        setTripsLoading(false);
-        setLayoutReady(true);
-      }
+      setTripsLoading(false);
+      setLayoutReady(true);
     }
   }, []);
 
