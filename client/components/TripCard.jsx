@@ -16,7 +16,9 @@ function IconWallet() {
   );
 }
 
-export function TripCard({ title, dateRangeLabel, budgetLabel }) {
+export function TripCard({ title, dateRangeLabel, budgetLabel, onEdit, onDelete }) {
+  const showActions = Boolean(onEdit || onDelete);
+
   return (
     <article className="dash-trip-card">
       <h3 className="dash-trip-card__title">{title}</h3>
@@ -30,6 +32,20 @@ export function TripCard({ title, dateRangeLabel, budgetLabel }) {
           {budgetLabel}
         </span>
       </div>
+      {showActions ? (
+        <div className="dash-trip-card__actions">
+          {onEdit ? (
+            <button type="button" className="dash-btn-ghost" onClick={onEdit}>
+              Edit
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button type="button" className="dash-btn-ghost" onClick={onDelete}>
+              Delete
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </article>
   );
 }

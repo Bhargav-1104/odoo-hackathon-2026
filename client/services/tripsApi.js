@@ -1,5 +1,5 @@
 /**
- * Authenticated trip API client (GET/POST /api/trips).
+ * Authenticated trip API client (/api/trips).
  */
 import { getAuthToken } from "../utils/authToken.js";
 
@@ -72,6 +72,55 @@ export async function createTrip(body) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
+  });
+  const data = await readJsonResponse(res);
+  return { ok: res.ok, status: res.status, data };
+}
+
+/**
+ * @param {string | number} tripId
+ * @param {{ title: string, description?: string, start_date: string, end_date: string, budget: number }} body
+ */
+export async function updateTrip(tripId, body) {
+  const token = getAuthToken();
+  if (!token) {
+    return {
+      ok: false,
+      status: 401,
+      data: { message: "Sign in to update a trip." },
+    };
+  }
+
+  const res = await fetch(`${API_BASE}/api/trips/${tripId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await readJsonResponse(res);
+  return { ok: res.ok, status: res.status, data };
+}
+
+/**
+ * @param {string | number} tripId
+ */
+export async function deleteTrip(tripId) {
+  const token = getAuthToken();
+  if (!token) {
+    return {
+      ok: false,
+      status: 401,
+      data: { message: "Sign in to delete a trip." },
+    };
+  }
+
+  const res = await fetch(`${API_BASE}/api/trips/${tripId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
   const data = await readJsonResponse(res);
   return { ok: res.ok, status: res.status, data };

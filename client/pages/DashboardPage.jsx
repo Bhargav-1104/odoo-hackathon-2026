@@ -10,7 +10,7 @@ import { EmptyTripsState } from "../components/EmptyTripsState.jsx";
 import { RecentActivityList } from "../components/RecentActivityList.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { TripCard } from "../components/TripCard.jsx";
-import { fetchTrips, normalizeTrip } from "../services/tripsApi.js";
+import { deleteTrip, fetchTrips, normalizeTrip } from "../services/tripsApi.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -53,6 +53,7 @@ function daysUntil(dateStr) {
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [tripToEdit, setTripToEdit] = useState(null);
   const [trips, setTrips] = useState([]);
   const [activities, setActivities] = useState([]);
   const [layoutReady, setLayoutReady] = useState(false);
@@ -60,6 +61,21 @@ export default function DashboardPage() {
   const [tripsError, setTripsError] = useState(null);
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  function openCreateModal() {
+    setTripToEdit(null);
+    setModalOpen(true);
+  }
+
+  function openEditModal(trip) {
+    setTripToEdit(trip);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setTripToEdit(null);
+  }
 
   const loadTrips = useCallback(async () => {
     setTripsLoading(true);
@@ -148,6 +164,50 @@ export default function DashboardPage() {
     ]);
   }
 
+  function handleTripUpdated(trip) {
+    if (!trip) return;
+    setTrips((prev) => prev.map((t) => (t.id === trip.id ? trip : t)));
+    setActivities((prev) => [
+      {
+        id: `${trip.id}-updated-${Date.now()}`,
+        text: `Updated “${trip.title}”`,
+        timeLabel: new Date().toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
+      },
+      ...prev,
+    ]);
+  }
+
+  async function handleDeleteTrip(trip) {
+    if (
+      !trip ||
+      !window.confirm(
+        `Delete “${trip.title}”? This removes the trip permanently and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    const { ok, data } = await deleteTrip(trip.id);
+    if (!ok) {
+      window.alert(data?.message || "Could not delete this trip.");
+      return;
+    }
+    setTrips((prev) => prev.filter((t) => t.id !== trip.id));
+    setActivities((prev) => [
+      {
+        id: `${trip.id}-deleted-${Date.now()}`,
+        text: `Deleted “${trip.title}”`,
+        timeLabel: new Date().toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
+      },
+      ...prev,
+    ]);
+  }
+
   return (
     <div className="dash-root">
       <DashboardShell
@@ -157,7 +217,7 @@ export default function DashboardPage() {
       >
         <DashboardHeader
           onOpenSidebar={() => setSidebarOpen(true)}
-          onOpenCreateTrip={() => setModalOpen(true)}
+          onOpenCreateTrip={openCreateModal}
         />
 
         {!layoutReady ? (
@@ -211,7 +271,7 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     className="dash-btn-ghost dash-panel__cta"
-                    onClick={() => setModalOpen(true)}
+                    onClick={openCreateModal}
                   >
                     Add trip
                   </button>
@@ -236,7 +296,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 ) : !trips.length ? (
-                  <EmptyTripsState onCreateTrip={() => setModalOpen(true)} />
+                  <EmptyTripsState onCreateTrip={openCreateModal} />
                 ) : (
                   <div
                     className={`dash-trip-grid dash-trip-grid--responsive${upcomingSorted.length > 1 ? " dash-trip-grid--multi" : ""}`}
@@ -253,6 +313,8 @@ export default function DashboardPage() {
                               ? formatMoney(budgetNum)
                               : "Budget TBD"
                           }
+                          onEdit={() => openEditModal(trip)}
+                          onDelete={() => handleDeleteTrip(trip)}
                         />
                       );
                     })}
@@ -278,7 +340,13 @@ export default function DashboardPage() {
         )}
       </DashboardShell>
 
-      <CreateTripModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={handleTripCreated} />
+      <CreateTripModal
+        open={modalOpen}
+        onClose={closeModal}
+        onCreated={handleTripCreated}
+        onUpdated={handleTripUpdated}
+        tripToEdit={tripToEdit}
+      />
     </div>
   );
 }

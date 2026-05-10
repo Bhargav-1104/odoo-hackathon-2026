@@ -719,6 +719,18 @@
   opacity: 0.85;
 }
 
+.dash-trip-card__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dash-trip-card__actions .dash-btn-ghost {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+}
+
 .dash-empty {
   text-align: center;
   padding: clamp(1.5rem, 4vw, 2.25rem) clamp(0.95rem, 3vw, 1.35rem);

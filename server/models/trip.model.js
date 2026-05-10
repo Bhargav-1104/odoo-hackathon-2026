@@ -48,3 +48,37 @@ export async function findTripForUser(tripId, userId) {
   );
   return result.rows[0] ?? null;
 }
+
+/**
+ * @param {number} tripId
+ * @param {number} userId
+ * @param {{ title: string, description: string | null, startDate: string, endDate: string, budget: string }} fields
+ */
+export async function updateTripForUser(tripId, userId, { title, description, startDate, endDate, budget }) {
+  const result = await pool.query(
+    `UPDATE trips
+     SET title = $1,
+         description = $2,
+         start_date = $3::date,
+         end_date = $4::date,
+         budget = $5
+     WHERE id = $6 AND user_id = $7
+     RETURNING ${TRIP_SELECT}`,
+    [title, description, startDate, endDate, budget, tripId, userId],
+  );
+  return result.rows[0] ?? null;
+}
+
+/**
+ * @param {number} tripId
+ * @param {number} userId
+ */
+export async function deleteTripForUser(tripId, userId) {
+  const result = await pool.query(
+    `DELETE FROM trips
+     WHERE id = $1 AND user_id = $2
+     RETURNING id`,
+    [tripId, userId],
+  );
+  return result.rows[0] ?? null;
+}

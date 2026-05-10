@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { TextField } from "./TextField.jsx";
 import { TextAreaField } from "./TextAreaField.jsx";
 import { ValidationSlot } from "./ValidationSlot.jsx";
-import { createTrip, normalizeTrip } from "../services/tripsApi.js";
+import { createTrip, normalizeTrip, updateTrip } from "../services/tripsApi.js";
 
 const emptyForm = {
   title: "",
@@ -12,12 +12,31 @@ const emptyForm = {
   budget: "",
 };
 
-function getTripDateBounds() {
+function getBaseTripDateBounds() {
   const y = new Date().getFullYear();
   return {
     minDate: `${y}-01-01`,
     maxDate: `${y + 10}-12-31`,
   };
+}
+
+/** Widen native min/max when editing so existing trip dates outside the default window stay valid. */
+function getTripDateBoundsForForm(tripToEdit) {
+  const base = getBaseTripDateBounds();
+  if (!tripToEdit) return base;
+  let minDate = base.minDate;
+  let maxDate = base.maxDate;
+  const s = tripToEdit.startDate;
+  const e = tripToEdit.endDate;
+  if (s && typeof s === "string") {
+    if (s < minDate) minDate = s;
+    if (s > maxDate) maxDate = s;
+  }
+  if (e && typeof e === "string") {
+    if (e < minDate) minDate = e;
+    if (e > maxDate) maxDate = e;
+  }
+  return { minDate, maxDate };
 }
 
 function isIsoDateString(value) {
@@ -91,12 +110,12 @@ function mapApiFieldErrors(data) {
   return next;
 }
 
-export function CreateTripModal({ open, onClose, onCreated }) {
+export function CreateTripModal({ open, onClose, onCreated, onUpdated, tripToEdit = null }) {
   const titleId = useId();
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
-  const dateBounds = getTripDateBounds();
+  const dateBounds = getTripDateBoundsForForm(tripToEdit);
   const endDateMin =
     form.startDate &&
     form.startDate >= dateBounds.minDate &&
@@ -114,12 +133,24 @@ export function CreateTripModal({ open, onClose, onCreated }) {
   }, [open, onClose]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    setLoading(false);
+    setFieldErrors({});
+    if (tripToEdit) {
+      setForm({
+        title: tripToEdit.title || "",
+        description: tripToEdit.description ?? "",
+        startDate: tripToEdit.startDate || "",
+        endDate: tripToEdit.endDate || "",
+        budget:
+          tripToEdit.budget != null && String(tripToEdit.budget).trim() !== ""
+            ? String(Number(tripToEdit.budget))
+            : "",
+      });
+    } else {
       setForm(emptyForm);
-      setLoading(false);
-      setFieldErrors({});
     }
-  }, [open]);
+  }, [open, tripToEdit]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -180,13 +211,17 @@ export function CreateTripModal({ open, onClose, onCreated }) {
 
     setLoading(true);
     try {
-      const { ok, data } = await createTrip({
+      const payload = {
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         start_date: form.startDate,
         end_date: form.endDate,
         budget: budgetNum,
-      });
+      };
+
+      const { ok, data } = tripToEdit
+        ? await updateTrip(tripToEdit.id, payload)
+        : await createTrip(payload);
 
       if (!ok) {
         setFieldErrors(mapApiFieldErrors(data));
@@ -195,7 +230,11 @@ export function CreateTripModal({ open, onClose, onCreated }) {
 
       const trip = normalizeTrip(data?.data?.trip);
       if (trip) {
-        onCreated(trip);
+        if (tripToEdit) {
+          onUpdated?.(trip);
+        } else {
+          onCreated?.(trip);
+        }
       }
       onClose();
     } catch {
@@ -218,8 +257,12 @@ export function CreateTripModal({ open, onClose, onCreated }) {
       >
         <div className="dash-modal__head">
           <div>
-            <h2 id={titleId}>Create trip</h2>
-            <p>Outline the basics—you can refine stops and bookings later.</p>
+            <h2 id={titleId}>{tripToEdit ? "Edit trip" : "Create trip"}</h2>
+            <p>
+              {tripToEdit
+                ? "Update the basics—stops and bookings can follow."
+                : "Outline the basics—you can refine stops and bookings later."}
+            </p>
           </div>
           <button type="button" className="dash-modal__close" aria-label="Close" onClick={onClose}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -298,6 +341,8 @@ export function CreateTripModal({ open, onClose, onCreated }) {
                   <span className="dash-btn-primary__spin" aria-hidden />
                   Saving…
                 </>
+              ) : tripToEdit ? (
+                "Save changes"
               ) : (
                 "Save trip"
               )}

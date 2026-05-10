@@ -96,3 +96,12 @@ export function validateTripCreatePayload(body) {
 
   return errors;
 }
+
+/**
+ * PUT /api/trips/:id — same rules as create (title, dates, budget required; description optional).
+ * @param {unknown} body
+ * @returns {{ field: string, message: string }[]}
+ */
+export function validateTripUpdatePayload(body) {
+  return validateTripCreatePayload(body);
+}
