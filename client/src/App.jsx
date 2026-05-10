@@ -1,7 +1,7 @@
-import AuthPage from "../pages/AuthPage.jsx";
+import AppRouter from "../pages/AppRouter.jsx";
 
 function App() {
-  return <AuthPage />;
+  return <AppRouter />;
 }
 
 export default App;
