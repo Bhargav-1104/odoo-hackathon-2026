@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/auth.css";
 import "../styles/dashboard.css";
 import { CreateTripModal } from "../components/CreateTripModal.jsx";
@@ -51,6 +52,7 @@ function daysUntil(dateStr) {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [tripToEdit, setTripToEdit] = useState(null);
@@ -83,12 +85,23 @@ export default function DashboardPage() {
     try {
       const { ok, status, data } = await fetchTrips();
       if (!ok) {
+        if (status === 401) {
+          navigate("/", { replace: true });
+          return;
+        }
         setTripsError(data?.message || `Could not load trips (${status}).`);
         setTrips([]);
         return;
       }
       const list = data?.data?.trips ?? [];
       setTrips(list.map(normalizeTrip).filter(Boolean));
+      setActivities(
+        list.slice(0, 5).map((trip) => ({
+          id: `loaded-${trip.id}`,
+          text: `Loaded "${trip.title}"`,
+          timeLabel: "Synced with backend",
+        })),
+      );
     } catch {
       setTripsError("Unable to reach the server. Check that it is running and try again.");
       setTrips([]);
@@ -102,8 +115,7 @@ export default function DashboardPage() {
   }, [loadTrips]);
 
   useEffect(() => {
-    const id = window.setTimeout(() => setLayoutReady(true), 380);
-    return () => window.clearTimeout(id);
+    loadTrips();
   }, []);
 
   useEffect(() => {
@@ -222,6 +234,16 @@ export default function DashboardPage() {
 
         {!layoutReady ? (
           <DashboardContentSkeleton />
+        ) : tripsError ? (
+          <div className="dash-content">
+            <section className="dash-empty dash-empty--activity" role="alert">
+              <h3 className="dash-empty__title">Could not load dashboard</h3>
+              <p className="dash-empty__text">{tripsError}</p>
+              <button type="button" className="dash-btn-primary" onClick={() => loadTrips()}>
+                Retry
+              </button>
+            </section>
+          </div>
         ) : (
           <div className="dash-content">
             <section className="dash-welcome" aria-labelledby="dash-welcome-heading">
@@ -281,20 +303,6 @@ export default function DashboardPage() {
                   <p className="dash-panel__caption" style={{ marginTop: "0.5rem" }}>
                     Loading trips…
                   </p>
-                ) : tripsError ? (
-                  <div className="dash-empty" style={{ padding: "1.5rem 1rem" }}>
-                    <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--auth-text-muted)" }}>
-                      {tripsError}
-                    </p>
-                    <button
-                      type="button"
-                      className="dash-btn-primary"
-                      style={{ marginTop: "1rem" }}
-                      onClick={() => loadTrips()}
-                    >
-                      Try again
-                    </button>
-                  </div>
                 ) : !trips.length ? (
                   <EmptyTripsState onCreateTrip={openCreateModal} />
                 ) : (
@@ -313,6 +321,7 @@ export default function DashboardPage() {
                               ? formatMoney(budgetNum)
                               : "Budget TBD"
                           }
+                          onClick={() => navigate(`/trips/${trip.id}`)}
                           onEdit={() => openEditModal(trip)}
                           onDelete={() => handleDeleteTrip(trip)}
                         />

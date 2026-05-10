@@ -16,11 +16,26 @@ function IconWallet() {
   );
 }
 
-export function TripCard({ title, dateRangeLabel, budgetLabel, onEdit, onDelete }) {
+export function TripCard({ title, dateRangeLabel, budgetLabel, onClick, onEdit, onDelete }) {
   const showActions = Boolean(onEdit || onDelete);
 
   return (
-    <article className="dash-trip-card">
+    <article
+      className={`dash-trip-card${onClick ? " dash-trip-card--interactive" : ""}`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+    >
       <h3 className="dash-trip-card__title">{title}</h3>
       <div className="dash-trip-card__meta">
         <span className="dash-trip-card__badge">
@@ -35,12 +50,26 @@ export function TripCard({ title, dateRangeLabel, budgetLabel, onEdit, onDelete 
       {showActions ? (
         <div className="dash-trip-card__actions">
           {onEdit ? (
-            <button type="button" className="dash-btn-ghost" onClick={onEdit}>
+            <button
+              type="button"
+              className="dash-btn-ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
               Edit
             </button>
           ) : null}
           {onDelete ? (
-            <button type="button" className="dash-btn-ghost" onClick={onDelete}>
+            <button
+              type="button"
+              className="dash-btn-ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
               Delete
             </button>
           ) : null}

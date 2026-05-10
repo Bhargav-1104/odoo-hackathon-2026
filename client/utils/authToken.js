@@ -5,5 +5,5 @@ export function saveAuthToken(token) {
 }
 
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return localStorage.getItem(AUTH_TOKEN_KEY) || "";
 }
