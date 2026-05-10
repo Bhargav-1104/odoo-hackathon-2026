@@ -25,3 +25,45 @@ The Travel Itinerary Planner is a full-stack web application designed to streaml
 * **Backend:** Node.js, Express.js
 * **Database:** SQL
 * **Authentication:** JSON Web Tokens (JWT) & bcrypt
+
+
+## Setup Instructions
+
+**1. Clone the repository**
+\`\`\`bash
+git clone <repository-url>
+cd odoo-hackathon-2026
+\`\`\`
+
+**2. Database Initialization**
+* Run your SQL server.
+* Execute the scripts in the `/database` folder (`schema.sql` and `seed.sql`) to set up the tables.
+
+**3. Backend Setup**
+\`\`\`bash
+cd server
+npm install
+# Configure your .env file based on .env.example
+npm start
+\`\`\`
+
+**4. Frontend Setup**
+\`\`\`bash
+cd client
+npm install
+npm run dev
+\`\`\`
+
+## API Overview
+The backend provides RESTful endpoints:
+* **`/api/auth`**: User registration, login, and validation.
+* **`/api/trips`**: Trip creation, retrieval, updates, and deletion.
+* **`/api/trips/:tripId/itinerary`**: Manage timeline events for a specific trip.
+* **`/api/trips/:tripId/notes`**: Add or modify personal notes for a trip.
+
+## Database Overview
+Relational database structure ensuring data integrity:
+* **Users:** Authenticated credentials.
+* **Trips:** Core trip details (destination, dates).
+* **TripItineraries:** Scheduled timeline events linked to trips.
+* **TripNotes:** Text notes linked to specific trips.
