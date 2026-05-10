@@ -67,3 +67,20 @@ Relational database structure ensuring data integrity:
 * **Trips:** Core trip details (destination, dates).
 * **TripItineraries:** Scheduled timeline events linked to trips.
 * **TripNotes:** Text notes linked to specific trips.
+
+## Architecture Summary
+The application utilizes a Client-Server architecture. The React frontend interacts with the Node.js/Express backend via REST APIs. The backend processes business logic, handles JWT middleware validation, and executes SQL database queries, ensuring strict separation of concerns.
+
+## Screenshots
+
+| Login & Authentication | Dashboard View |
+| :---: | :---: |
+| ![Login](screenshots/Login_page.png) | ![Dashboard](screenshots/Dashboard.png) |
+
+| Create Trip Modal | Edit Trip Interface |
+| :---: | :---: |
+| ![Create Trip](screenshots/Create_Trip.png) | ![Edit Trip](screenshots/Edit_Trip.png) |
+
+| Mobile Responsive View |
+| :---: |
+| ![Mobile View](screenshots/Mobile_view.png) |
