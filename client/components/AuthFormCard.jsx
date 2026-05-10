@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthSubmitButton } from "./AuthSubmitButton.jsx";
 import { TextField } from "./TextField.jsx";
 import { ValidationSlot } from "./ValidationSlot.jsx";
+import { loginRequest, signupRequest } from "../services/authApi.js";
+import { saveAuthToken } from "../utils/authToken.js";
 
 const initialForm = {
   name: "",
@@ -10,26 +13,99 @@ const initialForm = {
   confirmPassword: "",
 };
 
+function mapResponseToFieldErrors(status, data) {
+  const next = {};
+  if (Array.isArray(data?.errors)) {
+    for (const err of data.errors) {
+      if (err?.field && err?.message) {
+        next[err.field] = err.message;
+      }
+    }
+  }
+  if (status === 409 && data?.message) {
+    next.email = data.message;
+  }
+  if (status === 401 && data?.message) {
+    next.password = data.message;
+  }
+  if (Object.keys(next).length === 0 && data?.message) {
+    next.email = data.message;
+  }
+  return next;
+}
+
 export function AuthFormCard() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const isSignup = mode === "signup";
 
   function updateField(field) {
-    return (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    return (e) => {
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      setFieldErrors((prev) => {
+        if (!prev[field]) return prev;
+        const copy = { ...prev };
+        delete copy[field];
+        return copy;
+      });
+    };
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setFieldErrors({});
+
+    if (isSignup && form.password !== form.confirmPassword) {
+      setFieldErrors({
+        confirmPassword: "Passwords do not match",
+      });
+      return;
+    }
+
     setLoading(true);
-    window.setTimeout(() => setLoading(false), 900);
+    try {
+      if (isSignup) {
+        const { ok, status, data } = await signupRequest({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        });
+        if (ok && data?.data?.token) {
+          saveAuthToken(data.data.token);
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+        setFieldErrors(mapResponseToFieldErrors(status, data));
+        return;
+      }
+
+      const { ok, status, data } = await loginRequest({
+        email: form.email,
+        password: form.password,
+      });
+      if (ok && data?.data?.token) {
+        saveAuthToken(data.data.token);
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+      setFieldErrors(mapResponseToFieldErrors(status, data));
+    } catch {
+      setFieldErrors({
+        email: "Unable to reach the server. Check that it is running and try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   function switchMode(next) {
     setMode(next);
     setForm(initialForm);
+    setFieldErrors({});
     setLoading(false);
   }
 
@@ -54,7 +130,7 @@ export function AuthFormCard() {
             onChange={updateField("name")}
             placeholder="Alex Rivera"
             autoComplete="name"
-            validationSlot={<ValidationSlot message="" />}
+            validationSlot={<ValidationSlot message={fieldErrors.name || ""} />}
           />
         )}
 
@@ -67,7 +143,7 @@ export function AuthFormCard() {
           onChange={updateField("email")}
           placeholder="you@example.com"
           autoComplete="email"
-          validationSlot={<ValidationSlot message="" />}
+          validationSlot={<ValidationSlot message={fieldErrors.email || ""} />}
         />
 
         <TextField
@@ -79,7 +155,7 @@ export function AuthFormCard() {
           onChange={updateField("password")}
           placeholder="••••••••"
           autoComplete={isSignup ? "new-password" : "current-password"}
-          validationSlot={<ValidationSlot message="" />}
+          validationSlot={<ValidationSlot message={fieldErrors.password || ""} />}
         />
 
         {isSignup && (
@@ -92,7 +168,7 @@ export function AuthFormCard() {
             onChange={updateField("confirmPassword")}
             placeholder="Repeat password"
             autoComplete="new-password"
-            validationSlot={<ValidationSlot message="" />}
+            validationSlot={<ValidationSlot message={fieldErrors.confirmPassword || ""} />}
           />
         )}
 
