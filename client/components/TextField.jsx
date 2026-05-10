@@ -5,8 +5,11 @@ export function TextField({
   name,
   value,
   onChange,
+  onInvalid,
   placeholder,
   autoComplete,
+  min,
+  max,
   validationSlot,
 }) {
   return (
@@ -21,8 +24,11 @@ export function TextField({
         className="auth-input"
         value={value}
         onChange={onChange}
+        onInvalid={onInvalid}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
       />
       {validationSlot}
     </div>

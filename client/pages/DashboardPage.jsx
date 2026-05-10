@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "../styles/auth.css";
 import "../styles/dashboard.css";
 import { CreateTripModal } from "../components/CreateTripModal.jsx";
@@ -10,6 +10,7 @@ import { EmptyTripsState } from "../components/EmptyTripsState.jsx";
 import { RecentActivityList } from "../components/RecentActivityList.jsx";
 import { StatCard } from "../components/StatCard.jsx";
 import { TripCard } from "../components/TripCard.jsx";
+import { fetchTrips, normalizeTrip } from "../services/tripsApi.js";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -55,8 +56,34 @@ export default function DashboardPage() {
   const [trips, setTrips] = useState([]);
   const [activities, setActivities] = useState([]);
   const [layoutReady, setLayoutReady] = useState(false);
+  const [tripsLoading, setTripsLoading] = useState(true);
+  const [tripsError, setTripsError] = useState(null);
 
   const closeSidebar = () => setSidebarOpen(false);
+
+  const loadTrips = useCallback(async () => {
+    setTripsLoading(true);
+    setTripsError(null);
+    try {
+      const { ok, status, data } = await fetchTrips();
+      if (!ok) {
+        setTripsError(data?.message || `Could not load trips (${status}).`);
+        setTrips([]);
+        return;
+      }
+      const list = data?.data?.trips ?? [];
+      setTrips(list.map(normalizeTrip).filter(Boolean));
+    } catch {
+      setTripsError("Unable to reach the server. Check that it is running and try again.");
+      setTrips([]);
+    } finally {
+      setTripsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTrips();
+  }, [loadTrips]);
 
   useEffect(() => {
     const id = window.setTimeout(() => setLayoutReady(true), 380);
@@ -75,7 +102,10 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     const today = todayIso();
     const upcoming = trips.filter((t) => !t.endDate || t.endDate >= today);
-    const budgetSum = trips.reduce((sum, t) => sum + (Number.isFinite(t.budget) ? t.budget : 0), 0);
+    const budgetSum = trips.reduce((sum, t) => {
+      const n = Number(t.budget);
+      return sum + (Number.isFinite(n) ? n : 0);
+    }, 0);
 
     let nextDays = null;
     const futureStarts = trips
@@ -99,21 +129,12 @@ export default function DashboardPage() {
       .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
   }, [trips]);
 
-  function handleTripCreated(payload) {
-    const budget = Number.parseFloat(payload.budget);
-    const trip = {
-      id:
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : String(Date.now()),
-      title: payload.title || "Untitled trip",
-      description: payload.description,
-      startDate: payload.startDate,
-      endDate: payload.endDate,
-      budget: Number.isFinite(budget) ? budget : 0,
-    };
-
-    setTrips((prev) => [trip, ...prev]);
+  function handleTripCreated(trip) {
+    if (!trip) return;
+    setTrips((prev) => {
+      if (prev.some((t) => t.id === trip.id)) return prev;
+      return [trip, ...prev];
+    });
     setActivities((prev) => [
       {
         id: `${trip.id}-activity`,
@@ -146,8 +167,8 @@ export default function DashboardPage() {
             <section className="dash-welcome" aria-labelledby="dash-welcome-heading">
               <h2 id="dash-welcome-heading">Welcome back, traveler</h2>
               <p>
-                Your dashboard keeps itineraries, budgets, and momentum in sync—whether you are
-                plotting a weekend escape or a multi-city route.
+                Your dashboard keeps itineraries, budgets, and momentum in sync—whether you are plotting a
+                weekend escape or a multi-city route.
               </p>
             </section>
 
@@ -185,9 +206,7 @@ export default function DashboardPage() {
                     <h2 className="dash-panel__title" id="dash-upcoming-title">
                       Upcoming trips
                     </h2>
-                    <p className="dash-panel__caption">
-                      Cards update as you add plans—hover for emphasis.
-                    </p>
+                    <p className="dash-panel__caption">Cards update as you add plans—hover for emphasis.</p>
                   </div>
                   <button
                     type="button"
@@ -198,20 +217,45 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {!trips.length ? (
+                {tripsLoading ? (
+                  <p className="dash-panel__caption" style={{ marginTop: "0.5rem" }}>
+                    Loading trips…
+                  </p>
+                ) : tripsError ? (
+                  <div className="dash-empty" style={{ padding: "1.5rem 1rem" }}>
+                    <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--auth-text-muted)" }}>
+                      {tripsError}
+                    </p>
+                    <button
+                      type="button"
+                      className="dash-btn-primary"
+                      style={{ marginTop: "1rem" }}
+                      onClick={() => loadTrips()}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : !trips.length ? (
                   <EmptyTripsState onCreateTrip={() => setModalOpen(true)} />
                 ) : (
                   <div
                     className={`dash-trip-grid dash-trip-grid--responsive${upcomingSorted.length > 1 ? " dash-trip-grid--multi" : ""}`}
                   >
-                    {upcomingSorted.map((trip) => (
-                      <TripCard
-                        key={trip.id}
-                        title={trip.title}
-                        dateRangeLabel={formatTripRange(trip.startDate, trip.endDate)}
-                        budgetLabel={trip.budget > 0 ? formatMoney(trip.budget) : "Budget TBD"}
-                      />
-                    ))}
+                    {upcomingSorted.map((trip) => {
+                      const budgetNum = Number(trip.budget);
+                      return (
+                        <TripCard
+                          key={trip.id}
+                          title={trip.title}
+                          dateRangeLabel={formatTripRange(trip.startDate, trip.endDate)}
+                          budgetLabel={
+                            Number.isFinite(budgetNum) && budgetNum > 0
+                              ? formatMoney(budgetNum)
+                              : "Budget TBD"
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -234,11 +278,7 @@ export default function DashboardPage() {
         )}
       </DashboardShell>
 
-      <CreateTripModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreated={handleTripCreated}
-      />
+      <CreateTripModal open={modalOpen} onClose={() => setModalOpen(false)} onCreated={handleTripCreated} />
     </div>
   );
 }
