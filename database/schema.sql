@@ -22,3 +22,23 @@ CREATE TABLE IF NOT EXISTS trips (
 
 CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips (user_id);
 CREATE INDEX IF NOT EXISTS idx_trips_user_created ON trips (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS trip_itinerary_items (
+  id SERIAL PRIMARY KEY,
+  trip_id INTEGER NOT NULL REFERENCES trips (id) ON DELETE CASCADE,
+  day_number INTEGER NOT NULL CHECK (day_number >= 1),
+  title VARCHAR(255) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_trip_itinerary_items_trip_id ON trip_itinerary_items (trip_id);
+
+CREATE TABLE IF NOT EXISTS trip_notes (
+  id SERIAL PRIMARY KEY,
+  trip_id INTEGER NOT NULL REFERENCES trips (id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_trip_notes_trip_id ON trip_notes (trip_id);

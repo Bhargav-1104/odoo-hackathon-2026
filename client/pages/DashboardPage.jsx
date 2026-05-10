@@ -106,17 +106,16 @@ export default function DashboardPage() {
       setTripsError("Unable to reach the server. Check that it is running and try again.");
       setTrips([]);
     } finally {
-      setTripsLoading(false);
+      finally {
+        setTripsLoading(false);
+        setLayoutReady(true);
+      }
     }
   }, []);
 
   useEffect(() => {
     loadTrips();
   }, [loadTrips]);
-
-  useEffect(() => {
-    loadTrips();
-  }, []);
 
   useEffect(() => {
     if (!sidebarOpen) return undefined;

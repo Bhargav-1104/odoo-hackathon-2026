@@ -9,36 +9,7 @@ import {
   updateTripForUser,
   deleteTripForUser,
 } from "../models/trip.model.js";
-
-function parseTripIdParam(raw) {
-  const id = Number(raw);
-  if (!Number.isInteger(id) || id < 1) {
-    throw new AppError(400, "Invalid trip id");
-  }
-  return id;
-}
-
-function isoDateOnly(value) {
-  if (!value) return value;
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
-  }
-  const s = String(value);
-  return s.length >= 10 ? s.slice(0, 10) : s;
-}
-
-function publicTrip(row) {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    title: row.title,
-    description: row.description,
-    start_date: isoDateOnly(row.start_date),
-    end_date: isoDateOnly(row.end_date),
-    budget: row.budget != null ? String(row.budget) : null,
-    created_at: row.created_at,
-  };
-}
+import { parseTripIdParam, publicTrip } from "../utils/tripPublic.js";
 
 export async function createTrip(req, res) {
   const userId = req.user.id;
